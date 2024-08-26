@@ -77,6 +77,34 @@ where
         self.inner.poll_recv_data(cx)
     }
 
+    #[allow(missing_docs)]
+    pub fn poll_recv_trailers(&mut self) -> Result<Option<HeaderMap>, Error> {
+        if let Some(mut trailers) = self.inner.trailers.take() {
+            let qpack::Decoded { fields, .. } =
+                match qpack::decode_stateless(&mut trailers, self.inner.max_field_section_size) {
+                    //= https://www.rfc-editor.org/rfc/rfc9114#section-4.2.2
+                    //# An HTTP/3 implementation MAY impose a limit on the maximum size of
+                    //# the message header it will accept on an individual HTTP message.
+                    Err(qpack::DecoderError::HeaderTooLong(cancel_size)) => {
+                        return Err(crate::error::Error::header_too_big(
+                            cancel_size,
+                            self.inner.max_field_section_size,
+                        ));
+                    }
+                    Ok(decoded) => decoded,
+                    Err(e) => return Err(e.into()),
+                };
+
+            return Ok(Some(Header::try_from(fields)?.into_fields()));
+        }
+        Ok(None)
+    }
+
+    #[allow(missing_docs)]
+    pub fn is_end_stream(&self) -> bool {
+        self.inner.stream.is_eos()
+    }
+
     /// Receive an optional set of trailers for the request
     #[cfg_attr(feature = "tracing", instrument(skip_all, level = "trace"))]
     pub async fn recv_trailers(&mut self) -> Result<Option<HeaderMap>, Error> {
