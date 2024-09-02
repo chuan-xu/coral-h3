@@ -750,10 +750,7 @@ where
 {
     /// Receive some of the request body.
     #[cfg_attr(feature = "tracing", instrument(skip_all, level = "trace"))]
-    pub fn poll_recv_data(
-        &mut self,
-        cx: &mut Context<'_>,
-    ) -> Poll<Result<Option<impl Buf>, Error>> {
+    pub fn poll_recv_data(&mut self, cx: &mut Context<'_>) -> Poll<Result<Option<Bytes>, Error>> {
         if !self.stream.has_data() {
             let frame = self
                 .stream

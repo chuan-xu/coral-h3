@@ -73,7 +73,7 @@ where
     pub fn poll_recv_data(
         &mut self,
         cx: &mut Context<'_>,
-    ) -> Poll<Result<Option<impl Buf>, Error>> {
+    ) -> Poll<Result<Option<bytes::Bytes>, Error>> {
         self.inner.poll_recv_data(cx)
     }
 
