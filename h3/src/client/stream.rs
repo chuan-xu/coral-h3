@@ -149,6 +149,14 @@ where
         self.inner.recv_data().await
     }
 
+    #[allow(missing_docs)]
+    pub fn poll_recv_data(
+        &mut self,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<Option<bytes::Bytes>, Error>> {
+        self.inner.poll_recv_data(cx)
+    }
+
     /// Receive an optional set of trailers for the response.
     #[cfg_attr(feature = "tracing", instrument(skip_all, level = "trace"))]
     pub async fn recv_trailers(&mut self) -> Result<Option<HeaderMap>, Error> {
