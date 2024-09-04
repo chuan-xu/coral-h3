@@ -137,4 +137,47 @@ impl Builder {
             last_accepted_stream: None,
         })
     }
+
+    #[allow(missing_docs)]
+    pub async fn build_with_sender<C, B>(
+        &self,
+        conn: C,
+    ) -> Result<
+        (
+            Connection<C, B>,
+            crate::client::SendRequest<C::OpenStreams, B>,
+        ),
+        Error,
+    >
+    where
+        C: quic::Connection<B>,
+        B: Buf,
+    {
+        let (tx, rx) = mpsc::unbounded_channel();
+        let sender = crate::client::SendRequest {
+            open: conn.opener(),
+            conn_state: SharedStateRef::default(),
+            max_field_section_size: self.config.settings.max_field_section_size,
+            sender_count: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(1)),
+            conn_waker: Some(
+                futures_util::future::poll_fn(|cx| std::task::Poll::Ready(cx.waker().clone()))
+                    .await,
+            ),
+            _buf: std::marker::PhantomData,
+            send_grease_frame: self.config.send_grease,
+        };
+        Ok((
+            Connection {
+                inner: ConnectionInner::new(conn, SharedStateRef::default(), self.config).await?,
+                max_field_section_size: self.config.settings.max_field_section_size,
+                request_end_send: tx,
+                request_end_recv: rx,
+                ongoing_streams: HashSet::new(),
+                sent_closing: None,
+                recv_closing: None,
+                last_accepted_stream: None,
+            },
+            sender,
+        ))
+    }
 }

@@ -107,14 +107,14 @@ where
     T: quic::OpenStreams<B>,
     B: Buf,
 {
-    pub(super) open: T,
-    pub(super) conn_state: SharedStateRef,
-    pub(super) max_field_section_size: u64, // maximum size for a header we receive
+    pub(crate) open: T,
+    pub(crate) conn_state: SharedStateRef,
+    pub(crate) max_field_section_size: u64, // maximum size for a header we receive
     // counts instances of SendRequest to close the connection when the last is dropped.
-    pub(super) sender_count: Arc<AtomicUsize>,
-    pub(super) conn_waker: Option<Waker>,
-    pub(super) _buf: PhantomData<fn(B)>,
-    pub(super) send_grease_frame: bool,
+    pub(crate) sender_count: Arc<AtomicUsize>,
+    pub(crate) conn_waker: Option<Waker>,
+    pub(crate) _buf: PhantomData<fn(B)>,
+    pub(crate) send_grease_frame: bool,
 }
 
 impl<T, B> SendRequest<T, B>
